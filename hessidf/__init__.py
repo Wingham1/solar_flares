@@ -15,7 +15,7 @@ def hessi_flare_dataframe():
     
     header line in the file isn't on the first row and the variable units were in the line underneith so had to fix the header line for the dataframe
     """
-    header = ['Flare', 'Start time', 'Peak', 'End', 'Dur (s)', 'Peak (c/s)', 'Total (Counts)', 'Energy (keV)', 'X Pos (asec)', 'Y Pos (asec)', 'Radial (asec)', 'AR', 'Flags']
+    header = ['Flare', 'Start', 'Peak', 'End', 'Dur (s)', 'Peak (c/s)', 'Total (Counts)', 'Energy (keV)', 'X Pos (asec)', 'Y Pos (asec)', 'Radial (asec)', 'AR', 'Flags']
     int_indexes = [0, 4, 5, 6, 8, 9, 10, 11]
     dt_indexes = [1, 2, 3]
     
@@ -49,12 +49,16 @@ def hessi_flare_dataframe():
     for i in dt_indexes:
         df[header[i]] = pd.to_datetime(df[header[i]])
     
-    print(df.dtypes)
-    
-    # filtering
-    bad_flags = ['NS','SD'] # NS non solar event, SD spacecraft in South Atlantic Anomaly where magnetic data is weird https://en.wikipedia.org/wiki/South_Atlantic_Anomaly
-    df = filter(df, bad_flags)
-    
+    for idx, row in df.iterrows():
+        if row['End'] < row['Start']:
+            row.loc['End'] = row['End'].replace(day = row['End'].day + 1)
+        if row['Peak'] < row['Start']:
+            row.loc['Peak'] = row['Peak'].replace(day = row['Peak'].day + 1)
+        if row['End'] < row['Start']:
+            print("end error")
+        if row['Peak'] < row['Start']:
+            print("peak error")
+           
     return df
 
 def filter(df, remove_flags):
@@ -66,7 +70,6 @@ def filter(df, remove_flags):
     bad_indexes = find_flags(df, remove_flags)
     df.drop(bad_indexes)
     return df
-
 
 def find_flags(df, flags):
     """
@@ -91,6 +94,14 @@ def plot_flare_locations(hessi):
     
     plt.scatter(hessi['X Pos (asec)'].values, hessi['Y Pos (asec)'].values, color='r', s=0.5)
     plt.show()
+
+def find_goes_class(df):
+    """
+    use date, time and class from a goes dataset to find the class of flares in the hessi dataset
+    
+    can we get location from a goes dataset?
+    """
+    pass
 
 def find_locations(df, flare_class):
     class_to_peak = {'A':'3-6', 'B':'6-12', 'C':'12-25', 'M':'25-50', 'x':5}
