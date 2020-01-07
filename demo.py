@@ -1,6 +1,10 @@
-import hessidf
+import hessidf as hdf
 
 if __name__ == '__main__':
+
+    print(hdf.goes_dataframe())
+
+    """
     HESSI = hessidf.hessi_flare_dataframe()
     
     # filtering
@@ -10,3 +14,4 @@ if __name__ == '__main__':
     hessidf.plot_flare_locations(HESSI)
     #loc = find_locations(HESSI, 'A')
     #print(loc)
+    """

@@ -95,15 +95,80 @@ def plot_flare_locations(hessi):
     plt.scatter(hessi['X Pos (asec)'].values, hessi['Y Pos (asec)'].values, color='r', s=0.5)
     plt.show()
 
-def find_goes_class(df):
+def get_box_coord(flare_x, flare_y, box_size):
     """
-    use date, time and class from a goes dataset to find the class of flares in the hessi dataset
+    A function that takes a flare location and returns co-ordinates for a box around the flare
     
-    can we get location from a goes dataset?
+    Param: flare_x,integer flare location x
+           flare_y, integer flare location y
+           box_size, length of the sides of the box
+    
+    return: list of tuple integers for the vertices of a box of a given size around a flare (top left, top right, bottom left, bottom right)
     """
-    pass
+    
+    return [(flare_x - 0.5*box_size, flare_y + 0.5*box_size), (flare_x + 0.5*box_size, flare_y + 0.5*box_size), (flare_x - 0.5*box_size, flare_y - 0.5*box_size), (flare_x + 0.5*box_size, flare_y - 0.5*box_size)]
 
-def find_locations(df, flare_class):
-    class_to_peak = {'A':'3-6', 'B':'6-12', 'C':'12-25', 'M':'25-50', 'x':5}
-    flares = df[df['Energy (keV)'] == class_to_peak[flare_class]]
-    return flares[['X Pos (asec)', 'Y Pos (asec)']]
+def flag_meanings():
+    """
+    print the meanings of the flags
+    """
+    
+    print("Flare Flag Codes: \na0 - In attenuator state 0 (None) sometime during flare \na1 - In attenuator state 1 (Thin) sometime during flare \na2 - In attenuator state 2 (Thick) sometime during flare \na3 - In attenuator state 3 (Both) sometime during flare \nAn - Attenuator state (0=None, 1=Thin, 2=Thick, 3=Both) at peak of flare \nDF - Front segment counts were decimated sometime during flare\nDR - Rear segment counts were decimated sometime during flare \nED - Spacecraft eclipse (night) sometime during flare\nEE - Flare ended in spacecraft eclipse (night) \nES - Flare started in spacecraft eclipse (night) \nFE - Flare ongoing at end of file \nFR - In Fast Rate Mode \nFS - Flare ongoing at start of file \nGD - Data gap during flare \nGE - Flare ended in data gap\nGS - Flare started in data gap \nMR - Spacecraft in high-latitude zone during flare \nNS - Non-solar event\nPE - Particle event: Particles are present \nPS - Possible Solar Flare; in front detectors, but no position\nPn - Position Quality: P0 = Position is NOT valid, P1 = Position is valid \nQn - Data Quality: Q0 = Highest Quality, Q11 = Lowest Quality\nSD - Spacecraft was in SAA sometime during flare \nSE - Flare ended when spacecraft was in SAA\nSS - Flare started when spacecraft was in SAA")
+    
+    pass
+    
+
+def goes_dataframe():
+    """
+    return a dataframe for the goes flare data
+    """
+    
+    df = pd.DataFrame()
+    
+    for y in range(2, 18, 1):
+    
+        """
+        2006
+        https://www.ngdc.noaa.gov/stp/space-weather/solar-data/solar-features/solar-flares/x-rays/goes/xrs/goes-xrs-report_2006.txt
+        https://www.ngdc.noaa.gov/stp/space-weather/solar-data/solar-features/solar-flares/x-rays/goes/xrs/goes-xrs-report_2008.txt
+        """
+        
+        year = 2000 + y
+        
+        if year == 2015:
+            url = 'https://www.ngdc.noaa.gov/stp/space-weather/solar-data/solar-features/solar-flares/x-rays/goes/xrs/goes-xrs-report_' + str(year) + '_modifiedreplacedmissingrows.txt'
+        elif year == 2017:
+            url = 'https://www.ngdc.noaa.gov/stp/space-weather/solar-data/solar-features/solar-flares/x-rays/goes/xrs/goes-xrs-report_' + str(year) + '-ytd.txt'
+        else:
+            url = 'https://www.ngdc.noaa.gov/stp/space-weather/solar-data/solar-features/solar-flares/x-rays/goes/xrs/goes-xrs-report_' + str(year) + '.txt'
+        
+        #clean
+        goes = pd.read_fwf(url, sep='\t', lineterminator='\n', header=None)
+        header = ['Date', 'Start_time', 'End_time', 'Peak_time', 'Class']
+        d = pd.Series([str(code)[5:11] for code in goes.iloc[:, 0].values])
+        s = pd.Series(goes_times(goes, 1))
+        e = pd.Series(goes_times(goes, 2))
+        p = pd.Series(goes_times(goes, 3))
+        c = goes.iloc[:, 5]
+        #i = pd.Series(goes.iloc[:, 6].values / 10)
+        goes = pd.concat([d, s, e, p, c], axis=1)
+        goes.columns = header
+        goes.dropna(inplace=True)
+        goes = goes[goes['Peak_time'] != '////'] # revome this row in 2011, its strange and thros and error
+        goes['Date'] = pd.to_datetime(goes['Date'], format='%y%m%d')
+        for i in range(1, 4):
+            goes[header[i]] = pd.to_datetime(goes[header[i]], format='%H%M').dt.time
+        
+        df = pd.concat([df, goes])
+        
+    return df
+
+def goes_times(goes, idx):
+    e = []
+    for code in goes.iloc[:, idx].values:
+        time_string = str(code).split('.')[0]
+        if time_string != 'nan':
+            while len(time_string) < 4:
+                time_string = '0' + time_string
+        e.append(time_string)
+    return e
