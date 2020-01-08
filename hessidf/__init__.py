@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import os
+import datetime as dt
 
 def hessi_flare_dataframe():
     """
@@ -15,7 +16,7 @@ def hessi_flare_dataframe():
     
     header line in the file isn't on the first row and the variable units were in the line underneith so had to fix the header line for the dataframe
     """
-    header = ['Flare', 'Start', 'Peak', 'End', 'Dur (s)', 'Peak (c/s)', 'Total (Counts)', 'Energy (keV)', 'X Pos (asec)', 'Y Pos (asec)', 'Radial (asec)', 'AR', 'Flags']
+    header = ['Flare', 'Start_time', 'Peak_time', 'End_time', 'Dur (s)', 'Peak (c/s)', 'Total (Counts)', 'Energy (keV)', 'X Pos (asec)', 'Y Pos (asec)', 'Radial (asec)', 'AR', 'Flags']
     int_indexes = [0, 4, 5, 6, 8, 9, 10, 11]
     dt_indexes = [1, 2, 3]
     
@@ -50,14 +51,10 @@ def hessi_flare_dataframe():
         df[header[i]] = pd.to_datetime(df[header[i]])
     
     for idx, row in df.iterrows():
-        if row['End'] < row['Start']:
-            row.loc['End'] = row['End'].replace(day = row['End'].day + 1)
-        if row['Peak'] < row['Start']:
-            row.loc['Peak'] = row['Peak'].replace(day = row['Peak'].day + 1)
-        if row['End'] < row['Start']:
-            print("end error")
-        if row['Peak'] < row['Start']:
-            print("peak error")
+        if row['End_time'] < row['Start_time']:
+            row.loc['End_time'] = row['End_time'] + dt.timedelta(days=1)
+        if row['Peak_time'] < row['Start_time']:
+            row.loc['Peak_time'] = row['Peak_time'] + dt.timedelta(days=1)
            
     return df
 
@@ -154,10 +151,19 @@ def goes_dataframe():
         goes = pd.concat([d, s, e, p, c], axis=1)
         goes.columns = header
         goes.dropna(inplace=True)
-        goes = goes[goes['Peak_time'] != '////'] # revome this row in 2011, its strange and thros and error
+        goes = goes[goes['Peak_time'] != '////'] # revome this row in 2011, its strange and throws and error
         goes['Date'] = pd.to_datetime(goes['Date'], format='%y%m%d')
         for i in range(1, 4):
-            goes[header[i]] = pd.to_datetime(goes[header[i]], format='%H%M').dt.time
+            goes[header[i]] = pd.to_datetime(goes[header[i]], format='%H%M')
+            for idx, row in goes.iterrows():
+                date = row['Date']
+                goes.iat[idx-1, i] = row[header[i]].replace(day = date.day, month=date.month, year=date.year)
+        for idx, row in goes.iterrows():
+            if row['End_time'] < row['Start_time']:
+                row.loc['End_time'] = row['End_time'] + dt.timedelta(days=1)
+            if row['Peak_time'] < row['Start_time']:
+                row.loc['Peak_time'] = row['Peak_time'] + dt.timedelta(days=1)
+        goes.drop(columns='Date', inplace=True)
         
         df = pd.concat([df, goes])
         
