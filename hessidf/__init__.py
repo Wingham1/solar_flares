@@ -66,6 +66,7 @@ def filter(df, remove_flags):
     df = df[df['Radial (asec)'] <= np.percentile(df['Radial (asec)'].values, 99)] # remove outliers as done here https://www.kaggle.com/lesagesj/solar-flares-from-rhessi-mission/notebook
     bad_indexes = find_flags(df, remove_flags)
     df.drop(bad_indexes)
+    df = df[df['AR'] > 0]
     return df
 
 def find_flags(df, flags):

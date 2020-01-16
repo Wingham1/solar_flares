@@ -31,9 +31,11 @@ if __name__ == '__main__':
         """
         if len(match.index) == 1:
             hessi_idx = match.index
-            data['Peak_time'].append(match['Peak_time']) # use to_numpy!!
-            data['X_pos'].append(match['X Pos (asec)'])
-            data['Y_pos'].append(match['Y Pos (asec)'])
+            data['Peak_time'].append(match['Peak_time'].to_numpy()[0]) # use to_numpy!!
+            data['X_pos'].append(match['X Pos (asec)'].to_numpy()[0])
+            data['Y_pos'].append(match['Y Pos (asec)'].to_numpy()[0])
             data['Class'].append(row['Class'])
     data = pd.DataFrame.from_dict(data)
-    print(data.head())
+    print('total flares = {}, num B class = {}, num C class = {}'.format(len(data.index), len(data[data['Class'] == 'B'].index), len(data[data['Class'] == 'C'].index)))
+    data.to_csv('cross_data.csv', index=False)
+    
