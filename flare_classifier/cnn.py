@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-def data_prep(path_to_training_images, img_rows, img_cols, color):
+def data_prep(path, img_rows, img_cols, color):
     """
     A function to preprocess the input data for a CNN.
     The images are resized, normalised to have pixel values between 0-1, converted into greyscale if required and put into a numpy array.
@@ -15,7 +15,7 @@ def data_prep(path_to_training_images, img_rows, img_cols, color):
     This function requires that the images for each class are in a seperate directory.
     
     param:
-           - path_to_training_images, a string of the path to the directory containing the images
+           - path, a string of the path to the directory containing the images
            - img_rows, an integer for the number of rows the resized image should have
            - img_cols, an integer for the number of columns the resized image should have
            - color, a boolean that is set to true if the image should be in RGB colour space or false for greyscale
@@ -27,16 +27,16 @@ def data_prep(path_to_training_images, img_rows, img_cols, color):
     
     images = []
     labels = []
-    for image_class in os.listdir(path_to_training_images):
+    for image_class in os.listdir(path):
         print('image_class =', image_class)
-        path_to_class_directory = os.path.join(path_to_training_images, image_class)
+        path_to_class_directory = os.path.join(path, image_class)
         for img_name in os.listdir(path_to_class_directory):
             true_path = os.path.join(path_to_class_directory, img_name)
             if color:
                 images.append(cv2.imread(true_path, 1)/255.0)
             else:
                 images.append(cv2.imread(true_path, 0)/255.0) # greyscale
-            labels.append(os.listdir(path_to_training_images).index(image_class))
+            labels.append(os.listdir(path).index(image_class))
     data = list(zip(images, labels))
     np.random.shuffle(data)
     images, labels = zip(*data)
@@ -45,7 +45,7 @@ def data_prep(path_to_training_images, img_rows, img_cols, color):
         images = np.array(images).reshape(len(images), img_rows, img_cols, 3)
     else:
         images = np.array(images).reshape(len(images), img_rows, img_cols, 1)
-    labels = keras.utils.to_categorical(labels, num_classes=len(os.listdir(path_to_training_images)))
+    labels = keras.utils.to_categorical(labels, num_classes=len(os.listdir(path)))
     return images, labels
 
 def build_CNN(img_rows, img_cols, color=False):
@@ -125,5 +125,6 @@ if __name__ == '__main__':
     predictions = loaded_cnn.predict(x_test)
     dec_preds = decode_labels(predictions, os.listdir(path))
     dec_ytest = decode_labels(y_test, os.listdir(path))
-
+    
+    # F1 score would probably be a better metric due to skew of training expample (num B > num C)
     print('\naccuracy =', calc_accuracy(dec_preds, dec_ytest))
