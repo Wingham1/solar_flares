@@ -78,7 +78,7 @@ terminado==0.8.1
 toolz==0.10.0
 tqdm==4.41.1
 typing-extensions==3.7.4.1
-urllib3==1.25.7
+urllib3==1.25.8
 virtualenv==16.7.7
 Werkzeug==0.16.0
 widgetsnbextension==3.2.1
