@@ -9,7 +9,7 @@ async-timeout==3.0.1
 attrs==19.3.0
 beautifulsoup4==4.8.2
 cached-property==1.5.1
-certifi==2019.11.28
+certifi==2022.12.7
 chardet==3.0.4
 cycler==0.10.0
 dask==2.9.2
